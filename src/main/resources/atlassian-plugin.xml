@@ -5,8 +5,24 @@
         <vendor name="${project.organization.name}" url="${project.organization.url}" />
     </plugin-info>
 
-    <macro name="user-membership" class="com.joypot.confluence.plugins.ExampleMacro" key="my-macro">
+	<!-- Register the macro in a plugin module. -->
+    <macro name="membership-check" class="com.joypot.confluence.plugins.ExampleMacro" key="membership-check">
+    
     <!-- TODO: Add macro description -->
-    <!-- <description></description> -->
+    <description> Demonstrate Confluence dependency injection and Velocity output. </description>
+    
+    <!-- Provides help text for the Confluence notation guide. -->
+    <resource type="velocity" name="help" location="templates/membership-check-macro-help.vm">
+    	<param name="help-section" value="confluence" />
+    </resource>	
+    
+    <!-- Specify which macro browser category this macro should display in. -->
+    <category name="confluence-content" />
+    
+    <!-- Define the parameters this macro may consume. -->
+    <parameters>
+    	<parameter name="greeting" type="string" />
+    </parameters>
+    	
     </macro>
 </atlassian-plugin>

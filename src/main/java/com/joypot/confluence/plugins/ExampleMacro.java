@@ -3,6 +3,7 @@ package com.joypot.confluence.plugins;
 import java.util.Map;
 import java.util.List;
 import java.util.Iterator;
+import java.util.Random;
 
 import com.atlassian.renderer.RenderContext;
 import com.atlassian.renderer.v2.macro.BaseMacro;
@@ -10,8 +11,11 @@ import com.atlassian.renderer.v2.macro.MacroException;
 import com.atlassian.renderer.v2.RenderMode;
 import com.atlassian.confluence.pages.PageManager;
 import com.atlassian.confluence.pages.Page;
+import com.atlassian.confluence.renderer.radeox.macros.MacroUtils;
+import com.atlassian.confluence.spaces.Space;
 import com.atlassian.confluence.spaces.SpaceManager;
 import com.atlassian.confluence.user.AuthenticatedUserThreadLocal;
+import com.atlassian.confluence.util.velocity.VelocityUtils;
 import com.atlassian.user.User;
 import com.opensymphony.util.TextUtils;
 
@@ -28,6 +32,8 @@ public class ExampleMacro extends BaseMacro
 
     private final PageManager pageManager;
     private final SpaceManager spaceManager;
+    
+    private static final String MACRO_BODY_TEMPLATE = "templates/membership-check.vm";
 
     public ExampleMacro(PageManager pageManager, SpaceManager spaceManager)
     {
@@ -56,42 +62,75 @@ public class ExampleMacro extends BaseMacro
      * managers and model objects. No emphasis is put on beauty of code nor on
      * doing actually useful things :-)
      */
-    public String execute(Map params, String body, RenderContext renderContext)
-            throws MacroException
-    {
-
-        // in this most simple example, we build the result in memory, appending HTML code to it at will.
-        // this is something you absolutely don't want to do once you start writing plugins for real. Refer
-        // to the next example for better ways to render content.
-        StringBuffer result = new StringBuffer();
-
-        // get the currently logged in user and display his name
-        User user = AuthenticatedUserThreadLocal.getUser();
-        if (user != null)
-        {
-            String greeting = "Hello " + TextUtils.htmlEncode(user.getFullName()) + "<br><br>";
-            result.append(greeting);
-        }
-
-        //get the pages added in the last 55 days to the DS space ("Demo Space"), and display them
-        List list = pageManager.getRecentlyAddedPages(55, "DS");
-        result.append("Some stats for the Demo space: <br> ");
-        for (Iterator i = list.iterator(); i.hasNext();)
-        {
-            Page page = (Page) i.next();
-            int numberOfChildren = page.getChildren().size();
-            String pageWithChildren = "Page " + TextUtils.htmlEncode(page.getTitle()) + " has " + numberOfChildren + " children <br> ";
-            result.append(pageWithChildren);
-        }
-
-        // and show the number of all spaces in this installation.
-        String spaces = "<br>Altogether, this installation has " + spaceManager.getAllSpaces().size() + " spaces. <br>";
-        result.append(spaces);
-
-        // this concludes our little demo. Now you should understand the basics of code injection use in Confluence, and how
-        // to get a really simple macro running.
-
-        return result.toString();
-    }
+//    public String execute(Map params, String body, RenderContext renderContext)
+//            throws MacroException
+//    {
+//
+//        // in this most simple example, we build the result in memory, appending HTML code to it at will.
+//        // this is something you absolutely don't want to do once you start writing plugins for real. Refer
+//        // to the next example for better ways to render content.
+//        StringBuffer result = new StringBuffer();
+//
+//        // get the currently logged in user and display his name
+//        User user = AuthenticatedUserThreadLocal.getUser();
+//        if (user != null)
+//        {
+//            String greeting = "Hello " + TextUtils.htmlEncode(user.getFullName()) + "<br><br>";
+//            result.append(greeting);
+//        }
+//
+//        //get the pages added in the last 55 days to the DS space ("Demo Space"), and display them
+//        List list = pageManager.getRecentlyAddedPages(55, "DS");
+//        result.append("Some stats for the Demo space: <br> ");
+//        for (Iterator i = list.iterator(); i.hasNext();)
+//        {
+//            Page page = (Page) i.next();
+//            int numberOfChildren = page.getChildren().size();
+//            String pageWithChildren = "Page " + TextUtils.htmlEncode(page.getTitle()) + " has " + numberOfChildren + " children <br> ";
+//            result.append(pageWithChildren);
+//        }
+//
+//        // and show the number of all spaces in this installation.
+//        String spaces = "<br>Altogether, this installation has " + spaceManager.getAllSpaces().size() + " spaces. <br>";
+//        result.append(spaces);
+//
+//        // this concludes our little demo. Now you should understand the basics of code injection use in Confluence, and how
+//        // to get a really simple macro running.
+//
+//        return result.toString();
+//    }
+    
+      public String execute(Map params, String body, RenderContext renderContext) throws MacroException {
+    	  
+    	  Map<String, Object> context = MacroUtils.defaultVelocityContext();
+    	  
+    	  if (params.containsKey("greeting")){
+    		  context.put("greeting", params.get("greeting"));
+    	  }
+    	  else {
+    		  User user = AuthenticatedUserThreadLocal.getUser();
+    		  if (user != null){
+    			  context.put("greeting", "Hello " + user.getFullName());
+    		  }
+    	  }
+    	  
+    	  List<Space> spaces = spaceManager.getAllSpaces();
+    	  context.put("totalSpaces", spaces.size());
+    	  
+    	  if (!spaces.isEmpty()){
+    		  // pick a space at rundom and find its home page
+    		  Random random = new Random();
+    		  int randomSpaceIndex = random.nextInt(spaces.size());
+    		  
+    		  Space randomSpace = spaces.get(randomSpaceIndex);
+    		  context.put("spaceName", randomSpace.getName());
+    		  
+    		  Page homePage = randomSpace.getHomePage();
+    		  context.put("homePageTitle", homePage.getTitle());
+    		  context.put("homePageCreator", homePage.getCreatorName());
+    	  }
+    	  
+    	  return VelocityUtils.getRenderedTemplate(MACRO_BODY_TEMPLATE, context);
+      }
 
 }

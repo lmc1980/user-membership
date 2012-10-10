@@ -1,0 +1,14 @@
+<tr>
+	<td>
+		{membership-check} <br> <br>
+		{membership-check:greeting=Hello from the macro!}
+	</td>
+	<td>
+		<p> A macro provided for test ... </p>
+		
+		<ul>
+			<li> greeting - An optional message to show at the top of the macro. </li>
+		</ul>
+	</td>
+</tr>
+
